@@ -1,64 +1,69 @@
-# E01 — Formatos Bajo la Lupa
+# Ejercicio 1 — Formatos Bajo la Lupa
 
-Build a benchmarking tool that compares storage formats for tabular data across multiple dataset scales. The exercise focuses on understanding the real cost of format decisions: not just disk size, but write time, read time, selective reads, and memory usage — and how those tradeoffs change as data grows.
-
----
-
-## The Problem
-
-Your team stores transaction logs as CSV because it's always worked. Your job is to challenge that decision with empirical evidence and propose an alternative backed by measurements, not opinion.
+**Módulo:** Python para Sistemas de Datos Modernos
+**Duración estimada:** 5-6 horas
 
 ---
 
-## Dataset
+## El problema
 
-A synthetic financial transactions dataset that you generate as part of this exercise.
+Tienes un millón de registros de transacciones. Tu equipo los guarda en CSV porque siempre lo han hecho así. Tu trabajo es demostrar con mediciones reales si esa es la mejor decisión — o no.
 
-| Field | Type | Description |
+---
+
+## Lo que construirás
+
+Una herramienta de benchmarking que genera datos, los almacena en múltiples formatos y compara su rendimiento. Al final tendrás evidencia concreta para recomendar un formato de almacenamiento.
+
+---
+
+## Paso 1 — Genera el dataset
+
+Escribe un script `generate_data.py` que acepte `--size` como argumento (`100k`, `500k`, `1m`) y genere un CSV con exactamente este schema:
+
+| Campo | Tipo | Valores |
 |---|---|---|
-| transaction_id | UUID4 | Unique per row |
-| timestamp | datetime | Uniform distribution over 1 year |
-| user_id | int | 1 – 50,000 |
-| merchant_id | int | 1 – 10,000 |
-| amount | float | 0.01 – 5,000.00 |
-| category | string | 10 fixed values |
-| country_code | string | 15 LATAM countries |
-| status | string | completed (85%) / failed (10%) / pending (5%) |
+| transaction_id | string (UUID4) | Único por fila |
+| timestamp | datetime | Rango de 1 año hacia atrás desde hoy, distribución uniforme |
+| user_id | entero | Entre 1 y 50,000 |
+| merchant_id | entero | Entre 1 y 10,000 |
+| amount | float | Entre 0.01 y 5,000.00 |
+| category | string | 10 valores: Food, Travel, Electronics, Health, Entertainment, Retail, Transport, Education, Services, Other |
+| country_code | string | 15 países: MX, CO, BR, AR, CL, PE, EC, VE, BO, PY, UY, CR, GT, PA, DO |
+| status | string | completed (85%), failed (10%), pending (5%) |
 
-The schema is fixed. Generate it at three scales: **100K, 500K, and 1M rows**.
-
----
-
-## Requirements
-
-- Python 3.11+
-- `pandas`, `pyarrow`
-- Environment managed with `uv` or `poetry`
+Este schema es fijo. No lo modifiques. Lo usarás en los cuatro ejercicios del módulo.
 
 ---
 
-## What to Build
+## Paso 2 — Benchmark de formatos
 
-**`generate_data.py`** — CLI script that accepts `--size` (100k, 500k, 1m) and saves the dataset as CSV to `data/`.
+Crea un módulo `storage_benchmark/` y un CLI `benchmark_cli.py` que reciba `--size` y `--formats` como argumentos. Para cada formato y escala, mide:
 
-**`storage_benchmark/`** — Reusable module with separate functions for reading and writing each format.
+- Tiempo de escritura (`time.perf_counter()`, repite 3 veces y reporta el promedio)
+- Tiempo de lectura completa del archivo
+- Tiempo de lectura selectiva: solo las columnas `amount` y `category`
+- Tamaño del archivo en disco (bytes)
+- Pico de memoria RAM durante la lectura (`tracemalloc`)
 
-**`benchmark_cli.py`** — CLI that accepts `--size` and `--formats` and runs the full benchmark, saving results to `results/`.
+Formatos que debes cubrir: CSV, JSON Lines (JSONL), Parquet sin compresión, Parquet con Snappy, Parquet con Gzip.
 
-Formats to cover: `csv`, `jsonl`, `parquet`, `parquet_snappy`, `parquet_gzip`.
-
-Metrics to measure per format and scale:
-- Write time (average of 3 runs)
-- Full read time
-- Selective read time (columns `amount` and `category` only)
-- File size on disk
-- Peak memory during read (`tracemalloc`)
-
-> Generation time does not count as write time. Generate the data first, then start measuring.
+> El tiempo de generación del dataset NO cuenta como tiempo de escritura. Genera los datos primero, guarda en memoria, y empieza a medir solo cuando escribes al disco.
 
 ---
 
-## Deliverables
+## Paso 3 — Reporte
+
+Escribe un `report.md` con:
+
+- Una tabla comparativa por escala con todos los formatos y métricas
+- Gráficas de barras (matplotlib) para tiempo de lectura y tamaño en disco
+- Una sección de conclusiones de mínimo 400 palabras donde expliques **POR QUÉ** ocurren las diferencias que observaste — no solo qué formato ganó
+- Una recomendación final: qué formato usarías en producción para este caso de uso y por qué
+
+---
+
+## Entregables
 
 ```
 ejercicio-01-formatos/
@@ -72,19 +77,32 @@ ejercicio-01-formatos/
 └── report.md
 ```
 
-**`report.md`** must include:
-- Comparative tables per scale
-- Bar charts for read times and disk size (matplotlib)
-- A written analysis (400+ words) explaining *why* the differences occur, not just which format won
-- A final recommendation with technical justification
+El CLI debe ejecutarse así:
+
+```bash
+python benchmark_cli.py --size 1m --formats csv jsonl parquet parquet_snappy parquet_gzip
+```
 
 ---
 
-## Evaluation
+## Cómo se evaluará
 
-| Criterion | Weight |
+| Criterio | Peso |
 |---|---|
-| Functional CLI and organized module | 20% |
-| Benchmark rigor | 25% |
-| Analysis across scales | 25% |
-| Report and conclusions | 30% |
+| CLI funcional y módulo organizado | 20% |
+| Rigor del benchmark | 25% |
+| Análisis por escala | 25% |
+| Reporte y conclusiones | 30% |
+
+---
+
+## Cómo entregar
+
+Cuando termines, manda un mensaje en el canal **#becarios** de Discord con este formato:
+
+```
+Ejercicio 1 listo para revisión
+Repo: [link]
+Branch: [main u otro]
+Nota (opcional): [algo que quieras comentar]
+```
