@@ -278,4 +278,4 @@ los 33 tests con separación explícita de responsabilidades son las decisiones
 que hacen esta entrega la más completa del grupo en E06. El único gap concreto
 es `VALID_STATUSES` sin conectar — la pregunta de seguimiento lleva directamente
 a la corrección y a entender por qué el `classify_rejection()` también necesita
-actualizarse.
+actualizarse. 
